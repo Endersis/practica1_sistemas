@@ -1,35 +1,41 @@
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Scanner;
 
-public class cliente_entero {
+public class IntegerClient {
     public static void main(String[] args) {
-        try {
+        try (
             Socket socket = new Socket("localhost", 5001);
+            OutputStream out = socket.getOutputStream();
+            InputStream in = socket.getInputStream();
+            Scanner scanner = new Scanner(System.in)
+        ) {
             System.out.println("Conectado al servidor");
             
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            Scanner scanner = new Scanner(System.in);
+            ByteBuffer buffer = ByteBuffer.allocate(4);
+            buffer.order(ByteOrder.nativeOrder());  // Usar el orden de bytes nativo
             
-            while(true) {
+            while (true) {
                 System.out.print("Ingrese un número entero (0 para salir): ");
                 int number = scanner.nextInt();
                 
-                out.writeInt(number);
+                // Enviar número
+                buffer.putInt(0, number);
+                out.write(buffer.array());
                 System.out.println("Número enviado: " + number);
                 
-                if(number == 0) {
+                if (number == 0) {
                     System.out.println("Terminando el programa");
                     break;
                 }
                 
-                int response = in.readInt();
+                // Recibir respuesta
+                in.read(buffer.array());
+                int response = buffer.getInt(0);
                 System.out.println("Respuesta del servidor: " + response);
             }
-            
-            socket.close();
-            scanner.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
